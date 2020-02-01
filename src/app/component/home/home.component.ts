@@ -1,11 +1,14 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import readXlsxFile from 'read-excel-file'
-import * as L from "leaflet";
+import "leaflet";
+import "leaflet-canvas-marker"
+declare let L
 
 @Component({
   selector: 'app-home',
   templateUrl: './home.component.html',
-  styleUrls: ['./home.component.scss']
+  styleUrls: ['./home.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class HomeComponent implements OnInit {
 
@@ -26,7 +29,8 @@ export class HomeComponent implements OnInit {
   ngOnInit() {
     this.map = L.map('map', {
       center: [-4.059637, 117.486081],
-      zoom: 5
+      zoom: 5,
+      preferCanvas: true
     });
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
@@ -50,13 +54,13 @@ export class HomeComponent implements OnInit {
     var csvJsonString = []
     csvJsonString = this.csvContent.split("\n");
     var csvJsonObject = []
-    for(let i = 0; i<csvJsonString.length; i++){
-      if(i == 0){
+    for (let i = 0; i < csvJsonString.length; i++) {
+      if (i == 0) {
         this.latlongHeader = csvJsonString[i].split(new RegExp(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)"))
       }
       csvJsonObject.push(csvJsonString[i].split(new RegExp(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)")))
     }
-  
+
     let index = 0;
     let header = []
     let results = []
@@ -67,10 +71,10 @@ export class HomeComponent implements OnInit {
         for (let h of header) {
           map[h] = r1[index2]
 
-          if(h == "latitude"){
+          if (h == "latitude") {
             this.inputLatitude = h
           }
-          if(h == "longitude"){
+          if (h == "longitude") {
             this.inputLongitude = h
           }
 
@@ -85,6 +89,7 @@ export class HomeComponent implements OnInit {
       index++;
     }
     this.rawData = results
+    this.cdr.detectChanges()
   }
 
   onFileSelect(input) {
@@ -95,25 +100,38 @@ export class HomeComponent implements OnInit {
     if (files && files.length) {
       const fileToRead = files[0];
       const fileReader = new FileReader();
-      fileReader.onload = (e)=>{
+      fileReader.onload = (e) => {
         this.onFileLoad(e)
-      } 
+      }
       fileReader.readAsText(fileToRead, "UTF-8");
     }
   }
-  
-  importLocation(){
+
+  importLocation() {
     let count = 0
-    for(let rd of this.rawData){
-      try{
-        L.marker(new L.LatLng(rd[this.inputLatitude], rd[this.inputLongitude]), {
-        
-        }).addTo(this.map);
-      }catch(e){
+    var markers = []
+    var myRenderer = L.canvas({ padding: 0.5 });
+
+    // Adds a layer
+    var ciLayer = L.canvasIconLayer({}).addTo(this.map);
+
+    // Marker definition
+    // Adding marker to layer
+
+    for (let rd of this.rawData) {
+      try {
+        ciLayer.addMarker(L.marker(new L.LatLng(rd[this.inputLatitude], rd[this.inputLongitude])))
+      } catch (e) {
         console.error(e)
       }
       count++;
       console.log(count)
+      // if (count == 15000){
+      //   break;
+      // }
     }
+
+
+    this.cdr.detectChanges()
   }
 }

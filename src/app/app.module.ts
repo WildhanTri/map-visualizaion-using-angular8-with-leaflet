@@ -22,7 +22,7 @@ import { FormsModule } from '@angular/forms';
     BrowserAnimationsModule,
     BsDropdownModule.forRoot(),
     TooltipModule.forRoot(),
-    ModalModule.forRoot()
+    ModalModule.forRoot(),
   ],
   exports: [BsDropdownModule, TooltipModule, ModalModule],
   providers: [],
