@@ -1,14 +1,15 @@
 import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import readXlsxFile from 'read-excel-file'
+import 'jquery'
 import "leaflet";
 import "leaflet-canvas-marker"
 declare let L
+declare let $
 
 @Component({
   selector: 'app-home',
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class HomeComponent implements OnInit {
 
@@ -21,8 +22,11 @@ export class HomeComponent implements OnInit {
   inputLongitude;
 
   rawData = [];
+  importingRawData = [];
 
   map
+  ciLayer
+  markers = []
 
   constructor(private cdr: ChangeDetectorRef) { }
 
@@ -38,6 +42,9 @@ export class HomeComponent implements OnInit {
       id: 'mapbox.streets',
       accessToken: 'pk.eyJ1Ijoid2lsZGhhbnRyaSIsImEiOiJjazYzbW16YXkwOGNkM2twYTRxbzQxN2xwIn0.rshyTLtbA39-KGTzC1bV5A'
     }).addTo(this.map);
+
+    this.ciLayer = L.canvasIconLayer({});
+    this.ciLayer.addTo(this.map)
   }
 
   onFileSelected(event) {
@@ -88,8 +95,7 @@ export class HomeComponent implements OnInit {
       }
       index++;
     }
-    this.rawData = results
-    this.cdr.detectChanges()
+    this.importingRawData = results
   }
 
   onFileSelect(input) {
@@ -107,31 +113,37 @@ export class HomeComponent implements OnInit {
     }
   }
 
+  importProgress = 0
   importLocation() {
     let count = 0
-    var markers = []
-    var myRenderer = L.canvas({ padding: 0.5 });
 
     // Adds a layer
-    var ciLayer = L.canvasIconLayer({}).addTo(this.map);
-
+    // this.map.removeLayer(this.layerGroup)
+    // this.layerGroup = L.layerGroup().addTo(this.map);
     // Marker definition
     // Adding marker to layer
+    // this.ciLayer.removeMarker()
+    // this.map.removeLayer(this.ciLayer)
 
+    for(let m of this.markers){
+      this.ciLayer.removeLayer(m)
+    }
+
+    this.rawData = this.importingRawData
+    
+    this.markers = []
     for (let rd of this.rawData) {
       try {
-        ciLayer.addMarker(L.marker(new L.LatLng(rd[this.inputLatitude], rd[this.inputLongitude])))
+        this.markers.push(L.marker(new L.LatLng(rd[this.inputLatitude], rd[this.inputLongitude])))
       } catch (e) {
         console.error(e)
       }
       count++;
-      console.log(count)
-      // if (count == 15000){
-      //   break;
-      // }
+      this.importProgress = count / this.rawData.length
     }
 
-
-    this.cdr.detectChanges()
+    this.ciLayer.addMarkers(this.markers)
+    this.importProgress = 0;
+    $('#exampleModal').modal('toggle');
   }
 }
