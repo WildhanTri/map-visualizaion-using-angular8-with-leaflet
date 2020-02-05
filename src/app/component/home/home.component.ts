@@ -132,11 +132,14 @@ export class HomeComponent implements OnInit {
     this.rawData = this.importingRawData
     
     this.markers = []
+    console.log(this.rawData)
     for (let rd of this.rawData) {
       try {
-        this.markers.push(L.marker(new L.LatLng(rd[this.inputLatitude], rd[this.inputLongitude])))
+        var marker = L.marker(new L.LatLng(rd[this.inputLatitude], rd[this.inputLongitude]))
+        marker.bindPopup("<b>"+rd.name+"</b>")
+        this.markers.push(marker)
       } catch (e) {
-        console.error(e)
+        console.error(e)    
       }
       count++;
       this.importProgress = count / this.rawData.length
